@@ -1,0 +1,102 @@
+# ─── Secrets & credentials ───────────────────────────────────────────
+.env
+.env.*
+!.env.example
+apikey.json
+*credentials*.json
+*.pem
+*.key
+id_rsa*
+
+# ─── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ─── Virtual environments ────────────────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+.python-version
+Pipfile.lock
+
+# ─── Jupyter / IPython ───────────────────────────────────────────────
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+*.ipynb.bak
+
+# ─── Qiskit & IBM Quantum ────────────────────────────────────────────
+
+.qiskit/
+*.qasm
+*.qpy
+qiskit_ibm_runtime_*.log
+
+# ─── Data & generated artifacts ──────────────────────────────────────
+data/raw/
+data/processed/
+data/results/
+*.pkl
+*.npz
+*.npy
+*.parquet
+
+# ─── Plots & figures ─────────────────────────────────────────────────
+figures/
+plots/
+*.png
+*.pdf
+*.svg
+!docs/**/*.svg   # keep SVGs inside docs/ (diagrams, logos)
+
+# ─── Testing, linting, type-checking ─────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache
+.mypy_cache/
+.ruff_cache/
+.tox/
+.pyright/
+
+# ─── Logs ────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Editors & IDEs ──────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Misc ────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.swp
+*.orig
+.cache/
