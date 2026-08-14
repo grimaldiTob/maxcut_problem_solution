@@ -1,0 +1,27 @@
+{
+  "schema": "maxcut-qaoa/edge-list-v1",
+  "graph_family": "3-regular",
+  "count": 9,
+  "sizes": [
+    8,
+    10,
+    12,
+    14,
+    18,
+    20,
+    24,
+    30,
+    36
+  ],
+  "files": [
+    "graph_n008.json",
+    "graph_n010.json",
+    "graph_n012.json",
+    "graph_n014.json",
+    "graph_n018.json",
+    "graph_n020.json",
+    "graph_n024.json",
+    "graph_n030.json",
+    "graph_n036.json"
+  ]
+}
