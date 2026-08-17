@@ -5,6 +5,7 @@ import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
+from visualize import plot_cut, plot_all_cuts
 
 import cvxpy as cp
 import numpy as np
@@ -76,9 +77,7 @@ if __name__ == "__main__":
     
     graphs_dir = next((p for p in candidates if p.is_dir()),
                           candidates[-1])
-    
-    print(graphs_dir)
-    
+        
     files = sorted(p for p in graphs_dir.glob("graph_n*.json"))
     
     results = {}
@@ -94,6 +93,7 @@ if __name__ == "__main__":
             cut, a = brute_force_maxcut(edges, n)
             elapsed = (time.time() - start)
             # TODO: implement a graphic way of visualizing the cut
+            plot_cut(graph, a)
 
             print(f"Solved graph with {n} nodes.")
             results["n"].append(n)
