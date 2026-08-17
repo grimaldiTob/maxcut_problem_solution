@@ -1,6 +1,7 @@
 import itertools 
 import json
 import time
+import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
@@ -19,8 +20,8 @@ def brute_force_maxcut(edges: Iterable[tuple[int, int]], n: int) -> tuple[int, l
     
         Returns
         -------
-        best_size : int
-        best_
+        best_cut : int
+        best_a : 
     """
     assignments = itertools.product((-1, 1), repeat=n) # all possible subdivisions of a n-nodes graph
     edges = [(int(u), int(v)) for (u, v) in edges]
@@ -47,7 +48,6 @@ def load_graph(obj: GraphLike):
             - str
             - Path
     """
-    
     if(isinstance(obj, nx.Graph)):
         n = obj.number_of_nodes()
         edges = [(int(u), int(v)) for u, v in obj.edges()] 
@@ -61,8 +61,46 @@ def load_graph(obj: GraphLike):
                 raise ValueError(
                     f"Payload dict must have 'n' and 'edges' keys; got {list(obj)}"
                 )
-            n = int(obj["n"])
-            edges = [(int(u), int(v)) for u, v in obj["edges"]]
+            n = int(object["n"])
+            edges = [(int(u), int(v)) for u, v in object["edges"]]
             return edges, n
         
     raise TypeError("Unsupported Graph Type")
+
+if __name__ == "__main__":
+    here = Path(__file__).resolve().parent
+    candidates = [
+        Path.cwd() / "data" / "graphs",            
+        here.parent.parent / "data" / "graphs",
+    ]
+    
+    graphs_dir = next((p for p in candidates if p.is_dir()),
+                          candidates[-1])
+    
+    print(graphs_dir)
+    
+    files = sorted(p for p in graphs_dir.glob("graph_n*.json"))
+    
+    results = {}
+    results["n"] = []
+    results["max_cut"] = []
+    results["time"] = []
+    
+    for graph in files:
+        edges, n = load_graph(graph)
+        
+        if n < 25:
+            start = time.time()
+            cut, a = brute_force_maxcut(edges, n)
+            elapsed = (time.time() - start)
+            # TODO: implement a graphic way of visualizing the cut
+
+            print(f"Solved graph with {n} nodes.")
+            results["n"].append(n)
+            results["max_cut"].append(cut)
+            results["time"].append(elapsed)
+        else:
+            print(f"Graph too big (n = {n})to compute it with brute force.")
+            
+    print(results)
+        
