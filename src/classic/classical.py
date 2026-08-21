@@ -5,7 +5,7 @@ import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
-from visualize import plot_cut, plot_all_cuts
+from utility import plot_cut, plot_all_cuts, save_results
 
 import cvxpy as cp
 import numpy as np
@@ -102,5 +102,5 @@ if __name__ == "__main__":
         else:
             print(f"Graph too big (n = {n})to compute it with brute force.")
             
-    print(results)
+    save_results(results, filename="Brute-Force.json")
         

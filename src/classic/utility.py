@@ -16,10 +16,14 @@ here = Path(__file__).resolve().parent
 candidates = [
         Path.cwd() / "results" / "cuts",            
         here.parent.parent / "results" / "cuts",
+        here.parent.parent / "results" / "tables",
 ]
 
-RESULTS_DIR = next((p for p in candidates if p.is_dir()),
+GRAPH_DIR = next((p for p in candidates if p.is_dir()),
                           candidates[-1])
+
+RESULTS_DIR = here.parent.parent / "results" / "tables"
+
 
 def _to_nx_graph(graph: GraphInput) -> nx.Graph:
     """ Returns a graph object given different kinds of inputs """
@@ -60,7 +64,7 @@ def plot_cut(
     *,
     cut_size: int | None = None,
     title: str | None = None,
-    results_dir: Path | str | None = None,
+    graph_dir: Path | str | None = None,
     filename: str | None = None,
     layout_seed: int = 42,
     node_size: int = 500,
@@ -78,7 +82,7 @@ def plot_cut(
     assignment   : ±1 (or 0/1) sequence, length == graph.n
     cut_size     : if None, computed as number of cut edges
     title        : plot title; defaults to "MaxCut — n=…, cut=…"
-    results_dir  : output directory; defaults to <package>/../../results/cuts
+    graph_dir  : output directory; defaults to <package>/../../results/cuts
     filename     : explicit filename; default: cut_n{n:03d}_v{v}.png
     layout_seed  : deterministic spring_layout seed
     node_size, font_size, figsize, dpi : matplotlib styling
@@ -98,7 +102,7 @@ def plot_cut(
         cut = set(cut)
         cut_size = len(cut)
 
-    out_dir = Path(results_dir) if results_dir is not None else RESULTS_DIR
+    out_dir = Path(graph_dir) if graph_dir is not None else GRAPH_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     print(out_dir)
     if filename is None:
@@ -155,7 +159,7 @@ def plot_cut(
 def plot_all_cuts(
     graphs_with_assignments,
     *,
-    results_dir: Path | str | None = None,
+    graph_dir: Path | str | None = None,
     layout_seed: int = 42,
 ) -> list[Path]:
     """
@@ -169,8 +173,15 @@ def plot_all_cuts(
             plot_cut(
                 graph,
                 assignment,
-                results_dir=results_dir,
+                graph_dir=graph_dir,
                 layout_seed=layout_seed,
             )
         )
     return paths
+
+def save_results(results: dict, filename: str, OUT_DIR: str = ""):
+    file_path = RESULTS_DIR / filename
+    
+    with open(file_path, "w") as file:
+        json.dump(results, file)
+        file.close()    

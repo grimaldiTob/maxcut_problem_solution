@@ -4,7 +4,7 @@ from typing import Iterable, Union
 from pathlib import Path
 from classical import load_graph
 import time
-from visualize import plot_cut
+from utility import plot_cut, save_results
 
 def goemans_williamson(edges: Iterable[tuple[int, int]], n :int, num_rounds: int = 200, seed: int = 0):
     """
@@ -96,17 +96,16 @@ if __name__ == "__main__":
     for graph in files:
             edges, n = load_graph(graph)
             
-            if n < 25:
-                start = time.time()
-                cut, a, sdp = goemans_williamson(edges, n, 200)
-                elapsed = (time.time() - start)
-                
-                plot_cut(graph, a, filename=f"GW-n{n:03d}_v{cut}")
-                
-                print(f"Found the Maximum Cut with the Goemans-Williamson Algorithm on the graph with {n} nodes.")
-                results["n"].append(n)
-                results["max_cut"].append(cut)
-                results["time"].append(elapsed)
-                results["sdp"].append(sdp)
-                
-    print(results)
+            start = time.time()
+            cut, a, sdp = goemans_williamson(edges, n, 200)
+            elapsed = (time.time() - start)
+            
+            plot_cut(graph, a, title=f"Goemans-Williamson - n={n} cut={cut}", filename=f"GW-n{n:03d}_v{cut}")
+            
+            print(f"Found the Maximum Cut with the Goemans-Williamson Algorithm on the graph with {n} nodes.")
+            results["n"].append(n)
+            results["max_cut"].append(cut)
+            results["time"].append(elapsed)
+            results["sdp"].append(sdp)
+            
+    save_results(results, "Goemans-Williamson.json")
