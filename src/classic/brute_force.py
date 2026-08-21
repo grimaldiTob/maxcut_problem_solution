@@ -5,7 +5,7 @@ import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
-from utility import plot_cut, plot_all_cuts, save_results
+from project.src.common.utility import plot_cut, plot_all_cuts, save_results
 
 import cvxpy as cp
 import numpy as np
