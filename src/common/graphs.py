@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 import networkx as nx
 
@@ -34,6 +34,9 @@ LAYOUT_SEED = 42
 DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "graphs"
 MANIFEST_NAME = "manifest.json"
 SCHEMA = "maxcut-qaoa/edge-list-v1"
+
+GraphLike = Union[nx.Graph, str, Path]
+
 
 def make_cubic(n: int, seed: int) -> nx.Graph:
     """
@@ -124,6 +127,31 @@ def generate_dataset(out_dir: Path = DATA_DIR) -> tuple[dict[int, Path], Path]:
     manifest = write_manifest(out_dir=out_dir)
     return written, manifest
 
+def load_graph(obj: GraphLike):
+    """Normalise any supported input to ``(edges, n).
+        At the moment it just supports the following types:
+            - nx.Graph
+            - str
+            - Path
+    """
+    if(isinstance(obj, nx.Graph)):
+        n = obj.number_of_nodes()
+        edges = [(int(u), int(v)) for u, v in obj.edges()] 
+        return edges, n
+    
+    if(isinstance(obj, (str, Path))):
+        with Path(obj).open() as f:
+            object = json.load(f)
+            
+            if "n" not in object or "edges" not in object:
+                raise ValueError(
+                    f"Payload dict must have 'n' and 'edges' keys; got {list(obj)}"
+                )
+            n = int(object["n"])
+            edges = [(int(u), int(v)) for u, v in object["edges"]]
+            return edges, n
+        
+    raise TypeError("Unsupported Graph Type")
 
 # ─── CLI ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":

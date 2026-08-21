@@ -5,7 +5,8 @@ import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
-from project.src.common.utility import plot_cut, plot_all_cuts, save_results
+from src.common.graphs import plot_cut, plot_all_cuts, save_results
+from src.common.graphs import load_graph
 
 import cvxpy as cp
 import numpy as np
@@ -41,32 +42,6 @@ def brute_force_maxcut(edges: Iterable[tuple[int, int]], n: int) -> tuple[int, l
         raise ValueError("brute_force_maxcut received no edges or empty graph")
     
     return best_cut, best_a
-
-def load_graph(obj: GraphLike):
-    """Normalise any supported input to ``(edges, n).
-        At the moment it just supports the following types:
-            - nx.Graph
-            - str
-            - Path
-    """
-    if(isinstance(obj, nx.Graph)):
-        n = obj.number_of_nodes()
-        edges = [(int(u), int(v)) for u, v in obj.edges()] 
-        return edges, n
-    
-    if(isinstance(obj, (str, Path))):
-        with Path(obj).open() as f:
-            object = json.load(f)
-            
-            if "n" not in object or "edges" not in object:
-                raise ValueError(
-                    f"Payload dict must have 'n' and 'edges' keys; got {list(obj)}"
-                )
-            n = int(object["n"])
-            edges = [(int(u), int(v)) for u, v in object["edges"]]
-            return edges, n
-        
-    raise TypeError("Unsupported Graph Type")
 
 if __name__ == "__main__":
     here = Path(__file__).resolve().parent

@@ -2,9 +2,10 @@ import numpy as np
 import cvxpy as cp
 from typing import Iterable, Union
 from pathlib import Path
-from classical import load_graph
 import time
-from utility import plot_cut, save_results
+from src.common.utility import plot_cut, save_results
+from src.common.graphs import load_graph
+
 
 def goemans_williamson(edges: Iterable[tuple[int, int]], n :int, num_rounds: int = 200, seed: int = 0):
     """
