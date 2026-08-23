@@ -5,18 +5,62 @@ from pathlib import Path
 from typing import Iterable
 from src.common.hamiltonian import maxcut_coefficients
 from qiskit.quantum_info import SparsePauliOp
+from qiskit.circuit import Parameter, ParameterVector
+from qiskit.circuit.library import CXGate
 
-def build_ansatz_myself(edges: Iterable[tuple[int, int]], n: int):
-    h, J, pauli_ops = maxcut_coefficients(edges, n)
+def initialize_params(n: int, reps: int):
+    """ Helper function used to define an array of parameters that will be used in the circuit. """
+    gammas = ParameterVector("gamma", reps)
+    betas = ParameterVector("beta", reps)
     
-    return
-    
-def build_ansatz(edges: Iterable[tuple[int, int]], n: int):
+    return gammas, betas
+
+
+def build_ansatz_manual(edges: Iterable[tuple[int, int]], n: int, reps: int = 1):
+    """ My proper version of building the ansatz relative to the Max Cut problem """
     h, J, pauli_ops = maxcut_coefficients(edges, n)
+    edge_list = [(int(u), int(v)) for u, v in edges]
+    
+    qc = QuantumCircuit(n)
+    gamma, beta = initialize_params(n, reps)
+    cx = CXGate()
+
+    for qub in range(n):
+        qc.h(qub) # adds an hadamart gate applied to the n-th qubit
+
+    for layer in range(reps):        
+        g = gamma[layer]
+        b = beta[layer]
+        
+        # since all the h_i = 0 in the max cut problem this loop can be omitted
+        for qub in range(n):
+            qc.rz(2* g * h[qub], qub)
+        
+        for u, v in edge_list:
+            qc.append(cx, [u, v])
+            qc.rz(2 * g * J[u][v], v)
+            qc.append(cx, [u, v])
+                
+        for qub in range(n):
+            qc.rx(2* b, qub)
+    
+    return qc
+    
+def build_ansatz(edges: Iterable[tuple[int, int]], n: int, reps: int = 1) -> QAOAAnsatz:
+    """
+    Standard QAOA Ansatz using Qiskit's built-in QAOAAnsatz library class.
+    Parameters
+    edges : Graph edge list (0-indexed).
+    n : Number of qubits (graph vertices).
+    reps : Number of alternating cost and mixer layers (depth p).
+
+    Returns QAOAAnsatz object
+    """
+    
+    _, _, pauli_ops = maxcut_coefficients(edges, n)
     cost_operator = SparsePauliOp.from_sparse_list(pauli_ops, num_qubits=n)
     
-    ansatz = QAOAAnsatz(cost_operator=cost_operator, reps=1) # reps parameter to tune ???
-    ansatz.draw("mpl")
+    return QAOAAnsatz(cost_operator=cost_operator, reps=reps) # reps parameter to tune ???
 
 if __name__ == "__main__":
     here = Path(__file__).resolve().parent
@@ -33,6 +77,10 @@ if __name__ == "__main__":
     for graph in files:
         edges, n = load_graph(graph)
         
-        build_ansatz(edges, n)
+        qiskit_ansatz = build_ansatz(edges=edges, n=n, reps=2)
+        manual_ansatz = build_ansatz_manual(edges=edges, n=n, reps=2)
         
+        print(f"Qiskit QAOAAnsatz parameters: {qiskit_ansatz.parameters}")
+        print(f"Manual QAOAAnsatz parameters: {manual_ansatz.parameters}")
+        print(f"Manual circuit depth: {manual_ansatz.depth()}")        
         
