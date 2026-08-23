@@ -6,9 +6,9 @@ from typing import Iterable
 from src.common.hamiltonian import maxcut_coefficients
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.circuit import Parameter, ParameterVector
-from qiskit.circuit.library import CXGate
+import matplotlib.pyplot as plt
 
-def initialize_params(n: int, reps: int):
+def initialize_params(reps: int):
     """ Helper function used to define an array of parameters that will be used in the circuit. """
     gammas = ParameterVector("gamma", reps)
     betas = ParameterVector("beta", reps)
@@ -22,8 +22,7 @@ def build_ansatz_manual(edges: Iterable[tuple[int, int]], n: int, reps: int = 1)
     edge_list = [(int(u), int(v)) for u, v in edges]
     
     qc = QuantumCircuit(n)
-    gamma, beta = initialize_params(n, reps)
-    cx = CXGate()
+    gamma, beta = initialize_params(reps)
 
     for qub in range(n):
         qc.h(qub) # adds an hadamart gate applied to the n-th qubit
@@ -37,9 +36,9 @@ def build_ansatz_manual(edges: Iterable[tuple[int, int]], n: int, reps: int = 1)
             qc.rz(2* g * h[qub], qub)
         
         for u, v in edge_list:
-            qc.append(cx, [u, v])
+            qc.cx(u, v)
             qc.rz(2 * g * J[u][v], v)
-            qc.append(cx, [u, v])
+            qc.cx(u, v)
                 
         for qub in range(n):
             qc.rx(2* b, qub)
@@ -56,7 +55,6 @@ def build_ansatz(edges: Iterable[tuple[int, int]], n: int, reps: int = 1) -> QAO
 
     Returns QAOAAnsatz object
     """
-    
     _, _, pauli_ops = maxcut_coefficients(edges, n)
     cost_operator = SparsePauliOp.from_sparse_list(pauli_ops, num_qubits=n)
     
@@ -77,8 +75,12 @@ if __name__ == "__main__":
     for graph in files:
         edges, n = load_graph(graph)
         
-        qiskit_ansatz = build_ansatz(edges=edges, n=n, reps=2)
-        manual_ansatz = build_ansatz_manual(edges=edges, n=n, reps=2)
+        qiskit_ansatz = build_ansatz(edges=edges, n=n)
+        manual_ansatz = build_ansatz_manual(edges=edges, n=n)
+        
+        if n < 10:
+            manual_ansatz.draw("mpl")
+            plt.show()
         
         print(f"Qiskit QAOAAnsatz parameters: {qiskit_ansatz.parameters}")
         print(f"Manual QAOAAnsatz parameters: {manual_ansatz.parameters}")
