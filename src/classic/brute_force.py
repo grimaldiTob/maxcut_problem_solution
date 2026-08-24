@@ -5,7 +5,7 @@ import os
 import networkx as nx
 from pathlib import Path
 from typing import Iterable, Union
-from src.common.graphs import plot_cut, plot_all_cuts, save_results
+from src.common.utility import plot_cut, plot_all_cuts, save_results, retrieve_graphs
 from src.common.graphs import load_graph
 
 import cvxpy as cp
@@ -44,16 +44,7 @@ def brute_force_maxcut(edges: Iterable[tuple[int, int]], n: int) -> tuple[int, l
     return best_cut, best_a
 
 if __name__ == "__main__":
-    here = Path(__file__).resolve().parent
-    candidates = [
-        Path.cwd() / "data" / "graphs",            
-        here.parent.parent / "data" / "graphs",
-    ]
-    
-    graphs_dir = next((p for p in candidates if p.is_dir()),
-                          candidates[-1])
-        
-    files = sorted(p for p in graphs_dir.glob("graph_n*.json"))
+    files = retrieve_graphs()
     
     results = {}
     results["n"] = []

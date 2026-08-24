@@ -3,7 +3,7 @@ import cvxpy as cp
 from typing import Iterable, Union
 from pathlib import Path
 import time
-from src.common.utility import plot_cut, save_results
+from src.common.utility import plot_cut, save_results, retrieve_graphs
 from src.common.graphs import load_graph
 
 
@@ -77,16 +77,7 @@ def goemans_williamson(edges: Iterable[tuple[int, int]], n :int, num_rounds: int
     return best_cut, best_x, sdp_value
 
 if __name__ == "__main__":
-    here = Path(__file__).resolve().parent
-    candidates = [
-        Path.cwd() / "data" / "graphs",            
-        here.parent.parent / "data" / "graphs",
-    ]
-    
-    graphs_dir = next((p for p in candidates if p.is_dir()),
-                            candidates[-1])
-        
-    files = sorted(p for p in graphs_dir.glob("graph_n*.json"))
+    files = retrieve_graphs()
     
     results = {}
     results["n"] = []

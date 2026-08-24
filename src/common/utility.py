@@ -185,3 +185,15 @@ def save_results(results: dict, filename: str, OUT_DIR: str = ""):
     with open(file_path, "w") as file:
         json.dump(results, file)
         file.close()    
+        
+def retrieve_graphs():
+    here = Path(__file__).resolve().parent
+    candidates = [
+        Path.cwd() / "data" / "graphs",            
+        here.parent.parent / "data" / "graphs",
+    ]
+    
+    graphs_dir = next((p for p in candidates if p.is_dir()),
+                            candidates[-1])
+        
+    return sorted(p for p in graphs_dir.glob("graph_n*.json"))

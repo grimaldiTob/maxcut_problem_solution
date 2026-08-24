@@ -2,7 +2,7 @@ from qiskit.circuit.library import QAOAAnsatz
 from qiskit import QuantumCircuit
 from src.common.graphs import load_graph
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Sequence
 from src.common.hamiltonian import maxcut_coefficients
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.circuit import Parameter, ParameterVector
@@ -16,20 +16,23 @@ def initialize_params(reps: int):
     return gammas, betas
 
 
-def build_ansatz_manual(edges: Iterable[tuple[int, int]], n: int, reps: int = 1):
+def build_ansatz_manual(edges: Iterable[tuple[int, int]],
+                        n: int,
+                        gammas: Sequence[float],
+                        betas: Sequence[float],
+                        reps: int = 1):
     """ My proper version of building the ansatz relative to the Max Cut problem """
     h, J, pauli_ops = maxcut_coefficients(edges, n)
     edge_list = [(int(u), int(v)) for u, v in edges]
     
     qc = QuantumCircuit(n)
-    gamma, beta = initialize_params(reps)
 
     for qub in range(n):
         qc.h(qub) # adds an hadamart gate applied to the n-th qubit
 
     for layer in range(reps):        
-        g = gamma[layer]
-        b = beta[layer]
+        g = gammas[layer]
+        b = betas[layer]
         
         # since all the h_i = 0 in the max cut problem this loop can be omitted
         for qub in range(n):
