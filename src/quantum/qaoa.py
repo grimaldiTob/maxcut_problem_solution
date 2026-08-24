@@ -53,7 +53,9 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     else:
         ansatz = build_ansatz(edges, n, reps=reps)
         
-    estimator = Stateve
+    estimator = StatevectorEstimator()
+    
+    return
         
 if __name__ == "__main__":
     files = retrieve_graphs()
