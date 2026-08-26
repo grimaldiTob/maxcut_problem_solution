@@ -102,7 +102,7 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
         
 if __name__ == "__main__":
     files = retrieve_graphs()
-    REPS = 1
+    REPS = 2
     
     results = {
         "n": [],
@@ -115,31 +115,32 @@ if __name__ == "__main__":
     for graph in files:
         edges, n = load_graph(graph)
         
-        start = time.time()
-        best_cut, assignment, opt, stats = solve_qaoa(
-            edges=edges,
-            n=n,
-            optimizer_method="COBYLA", # for now we stick with this
-            reps=REPS,
-            maxiter=100,
-            shots=256,
-            manual_ansatz=True
-        )
-        elapsed = time.time() - start
-        
-        plot_cut(
-            graph=graph,
-            assignment=assignment,
-            title=f"QAOA MaxCut n: {n} and cut: {best_cut}",
-            filename=f"QAOA_n{n}_v{best_cut}.png"
-        )
-        
-        print(f"[QAOA p={REPS}] Solved n={n:02d} | Best Cut: {best_cut:>2} | Time: {elapsed:.2f}s | Energy: {opt:.3f}")
+        if n < 24:
+            start = time.time()
+            best_cut, assignment, opt, stats = solve_qaoa(
+                edges=edges,
+                n=n,
+                optimizer_method="COBYLA", # for now we stick with this
+                reps=REPS,
+                maxiter=100,
+                shots=256,
+                manual_ansatz=True
+            )
+            elapsed = time.time() - start
+            
+            plot_cut(
+                graph=graph,
+                assignment=assignment,
+                title=f"QAOA MaxCut n: {n} and cut: {best_cut}",
+                filename=f"QAOA_n{n}_v{best_cut}.png"
+            )
+            
+            print(f"[QAOA p={REPS}] Solved n={n:02d} | Best Cut: {best_cut:>2} | Time: {elapsed:.2f}s | Energy: {opt:.3f}")
 
-        results["n"].append(n)
-        results["reps"].append(REPS)
-        results["max_cut"].append(best_cut)
-        results["time"].append(elapsed)
-        results["energy_opt"].append(opt)
+            results["n"].append(n)
+            results["reps"].append(REPS)
+            results["max_cut"].append(best_cut)
+            results["time"].append(elapsed)
+            results["energy_opt"].append(opt)
         
     save_results(results, filename=f"QAOA_p{REPS}.json")

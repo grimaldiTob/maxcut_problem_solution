@@ -75,18 +75,19 @@ def profile_qaoa(edges, n, manual_ansatz, reps=1, maxiter=100):
 if __name__ == "__main__":
     graphs = [
         "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n008.json",
+        "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n014.json",
+        "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n020.json",
         "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n024.json",
-        "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n030.json",
     ]
 
     print(f"{'ansatz':>8} {'n':>3} {'evals':>6} {'build':>7} {'obj/s':>8} {'ms/eval':>8} {'opt/s':>8} {'depth':>6} {'cx':>5}")
     for g in graphs:
         edges, n = load_graph(g)
-        for manual in (True, False):
-            r = profile_qaoa(edges, n, manual_ansatz=manual, reps=1, maxiter=100)
-            print(
-                f"{'manual' if r['manual'] else 'qiskit':>8} "
-                f"{r['n']:>3} {r['n_evals']:>6} {r['t_build_s']:>7} "
-                f"{r['t_obj_total_s']:>8} {r['t_obj_per_eval_ms']:>8} "
-                f"{r['t_opt_total_s']:>8} {r['circuit_depth']:>6} {r['circuit_2q_gates']:>5}"
-            )
+        manual = True
+        r = profile_qaoa(edges, n, manual_ansatz=manual, reps=1, maxiter=100)
+        print(
+            f"{'manual' if r['manual'] else 'qiskit':>8} "
+            f"{r['n']:>3} {r['n_evals']:>6} {r['t_build_s']:>7} "
+            f"{r['t_obj_total_s']:>8} {r['t_obj_per_eval_ms']:>8} "
+            f"{r['t_opt_total_s']:>8} {r['circuit_depth']:>6} {r['circuit_2q_gates']:>5}"
+        )
