@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 from typing import Iterable, Sequence
+import scipy.optimize
 
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.primitives import StatevectorEstimator, StatevectorSampler
@@ -46,6 +47,8 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     
     edges = list(edges)
     rng = np.random.default_rng(42)
+    _, _, pauli_ops = maxcut_coefficients(edges, n)
+    cost_op = SparsePauliOp.from_sparse_list(pauli_ops, num_qubits=n)
     
     if manual_ansatz:
         gammas, betas = initialize_params(reps=reps)
@@ -53,17 +56,90 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     else:
         ansatz = build_ansatz(edges, n, reps=reps)
         
-    estimator = StatevectorEstimator()
+    estimator = StatevectorEstimator() # we need to estimate the epxectation value of the Hamiltonian
+    # generates uniform parameters in between [0, 1(
+    x0 = rng.uniform(0, 1.0, size=2*reps)
     
-    return
+    def objective(params: np.ndarray) -> float:
+        job = estimator.run([(ansatz, cost_op, params)])
+        result = job.result()[0]
+        return float(result.data.evs)
+    
+    optimization = scipy.optimize.minimize(
+        fun=objective,
+        x0=x0,
+        method=optimizer_method,
+        options={"maxiter": maxiter}
+    )
+    
+    # sampler -> perform measurements = shots
+    sampler = StatevectorSampler()
+    qc_measured = ansatz.assign_parameters(optimization.x) # assign the parameters from optimization
+    qc_measured.measure_all() # attach measurement operator to all qubits
+    
+    sample_job = sampler.run([qc_measured], shots=shots) # sample the circuit for `shots` times
+    results = sample_job.result()[0]
+    counts = results.data.meas.get_counts()
+    
+    best_cut = -1
+    best_x = None
+    
+    for bitstrings in counts.keys():
+        assignment = bistring_assignment(bitstrings)
+        cut = count_cuts(edges, assignment)
+        
+        if cut > best_cut:
+            best_cut = cut
+            best_x = assignment
+            
+    stats = {
+        "params": optimization.x.tolist(),
+        "success": bool(optimization.success),
+        "reps": reps
+    }
+    
+    return best_cut, best_x, float(optimization.fun), stats
         
 if __name__ == "__main__":
     files = retrieve_graphs()
+    REPS = 1
+    
+    results = {
+        "n": [],
+        "reps": [],
+        "max_cut": [],
+        "time": [],
+        "energy_opt": [],
+    }
     
     for graph in files:
         edges, n = load_graph(graph)
+        
+        start = time.time()
+        best_cut, assignment, opt, stats = solve_qaoa(
+            edges=edges,
+            n=n,
+            optimizer_method="COBYLA", # for now we stick with this
+            reps=REPS,
+            maxiter=100,
+            shots=256,
+            manual_ansatz=True
+        )
+        elapsed = time.time() - start
+        
+        plot_cut(
+            graph=graph,
+            assignment=assignment,
+            title=f"QAOA MaxCut n: {n} and cut: {best_cut}",
+            filename=f"QAOA_n{n}_v{best_cut}.png"
+        )
+        
+        print(f"[QAOA p={REPS}] Solved n={n:02d} | Best Cut: {best_cut:>2} | Time: {elapsed:.2f}s | Energy: {opt:.3f}")
 
-        qc = build_ansatz_manual(edges=edges, n=n)
-        h, J, pauli_coeff = maxcut_coefficients(edges=edges, n=n)
+        results["n"].append(n)
+        results["reps"].append(REPS)
+        results["max_cut"].append(best_cut)
+        results["time"].append(elapsed)
+        results["energy_opt"].append(opt)
         
-        
+    save_results(results, filename=f"QAOA_p{REPS}.json")

@@ -79,11 +79,12 @@ def goemans_williamson(edges: Iterable[tuple[int, int]], n :int, num_rounds: int
 if __name__ == "__main__":
     files = retrieve_graphs()
     
-    results = {}
-    results["n"] = []
-    results["max_cut"] = []
-    results["time"] = []
-    results["sdp"] = []
+    results = {
+            "n": [],
+            "max_cut": [],
+            "time": [],
+            "sdp": [],
+        }
     
     for graph in files:
             edges, n = load_graph(graph)

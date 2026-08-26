@@ -46,10 +46,11 @@ def brute_force_maxcut(edges: Iterable[tuple[int, int]], n: int) -> tuple[int, l
 if __name__ == "__main__":
     files = retrieve_graphs()
     
-    results = {}
-    results["n"] = []
-    results["max_cut"] = []
-    results["time"] = []
+    results = {
+        "n": [],
+        "max_cut": [],
+        "time": [],
+    }
     
     for graph in files:
         edges, n = load_graph(graph)
