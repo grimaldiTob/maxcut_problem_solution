@@ -12,6 +12,7 @@ from src.common.hamiltonian import maxcut_coefficients
 from src.quantum.ansatz import build_ansatz, build_ansatz_manual, initialize_params
 from src.common.utility import plot_cut, save_results, retrieve_graphs
 from src.common.graphs import load_graph
+from src.common.optimization import Wrapper
 
 def bistring_assignment(bitstring: str) -> Sequence[int]:
     # index i of the bitstring corresponds to qubit i
@@ -60,16 +61,29 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     # generates uniform parameters in between [0, 1(
     x0 = rng.uniform(0, 1.0, size=2*reps)
     
+    def cond_fun(vals):
+        curr = vals[0]
+        last4 = vals[1:]
+        avg_vals = np.sum(last4) / last4.size
+        return np.abs(curr - avg_vals)
+    
     def objective(params: np.ndarray) -> float:
         job = estimator.run([(ansatz, cost_op, params)])
         result = job.result()[0]
         return float(result.data.evs)
     
+    wrapper = Wrapper(
+        obj_fun=objective,
+        cond_fun=cond_fun,
+        threshold=1e-3
+    )
+    
     optimization = scipy.optimize.minimize(
-        fun=objective,
+        fun=wrapper.objective,
         x0=x0,
         method=optimizer_method,
-        options={"maxiter": maxiter}
+        options={"maxiter": maxiter},
+        callback=wrapper.callback # function called at the end of each iteration for early stopping
     )
     
     # sampler -> perform measurements = shots
@@ -102,7 +116,7 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
         
 if __name__ == "__main__":
     files = retrieve_graphs()
-    REPS = 2
+    REPS = 1
     
     results = {
         "n": [],

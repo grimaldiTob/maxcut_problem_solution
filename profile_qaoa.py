@@ -19,6 +19,7 @@ from pathlib import Path
 from src.common.hamiltonian import maxcut_coefficients
 from src.common.graphs import load_graph
 from src.quantum.ansatz import build_ansatz, build_ansatz_manual, initialize_params
+from src.common.optimization import Wrapper
 
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
@@ -50,10 +51,26 @@ def profile_qaoa(edges, n, manual_ansatz, reps=1, maxiter=100):
         n_evals[0] += 1
         t_obj[0] += time.perf_counter() - t
         return float(result.data.evs)
+    
+    def cond_fun(vals):
+        curr = vals[0]
+        last4 = vals[1:]
+        avg_vals = np.sum(last4) / last4.size
+        return np.abs(curr - avg_vals)
+    
+    wrapper = Wrapper(
+        obj_fun=objective,
+        cond_fun=cond_fun,
+        threshold=1e-4
+    )
 
     t0 = time.perf_counter()
     opt = scipy.optimize.minimize(
-        fun=objective, x0=x0, method="COBYLA", options={"maxiter": maxiter}
+            fun=wrapper.objective,
+            x0=x0,
+            method="L-BFGS-B",
+            options={"maxiter": maxiter},
+            callback=wrapper.callback # function called at the end of each iteration for early stopping
     )
     t_opt = time.perf_counter() - t0
 
@@ -64,7 +81,7 @@ def profile_qaoa(edges, n, manual_ansatz, reps=1, maxiter=100):
         "n_evals": n_evals[0],
         "t_build_s": round(t_build, 3),
         "t_obj_total_s": round(t_obj[0], 3),
-        "t_obj_per_eval_ms": round(1000 * t_obj[0] / max(n_evals[0], 1), 1),
+        "t_obj_per_eval_ms": round(1000 * t_obj[0] / max(n_evals[0], 1), 3),
         "t_opt_total_s": round(t_opt, 3),
         "energy": round(float(opt.fun), 3),
         "circuit_depth": ansatz.depth(),
@@ -77,7 +94,6 @@ if __name__ == "__main__":
         "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n008.json",
         "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n014.json",
         "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n020.json",
-        "/home/tgrimaldi/dev/python/qiskit/project/data/graphs/graph_n024.json",
     ]
 
     print(f"{'ansatz':>8} {'n':>3} {'evals':>6} {'build':>7} {'obj/s':>8} {'ms/eval':>8} {'opt/s':>8} {'depth':>6} {'cx':>5}")
