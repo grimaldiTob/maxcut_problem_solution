@@ -61,7 +61,7 @@ def profile_qaoa(edges, n, manual_ansatz, reps=1, maxiter=100):
     wrapper = Wrapper(
         obj_fun=objective,
         cond_fun=cond_fun,
-        threshold=1e-4
+        threshold=1e-3
     )
 
     t0 = time.perf_counter()

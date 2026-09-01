@@ -6,7 +6,10 @@ from typing import Iterable, Sequence
 import scipy.optimize
 
 from qiskit.quantum_info import SparsePauliOp
+from qiskit_aer import AerSimulator
+from qiskit.transpiler import generate_preset_pass_manager
 from qiskit.primitives import StatevectorEstimator, StatevectorSampler
+from qiskit_aer.primitives import EstimatorV2 as Estimator
 
 from src.common.hamiltonian import maxcut_coefficients
 from src.quantum.ansatz import build_ansatz, build_ansatz_manual, initialize_params
@@ -57,9 +60,13 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     else:
         ansatz = build_ansatz(edges, n, reps=reps)
         
-    estimator = StatevectorEstimator() # we need to estimate the epxectation value of the Hamiltonian
+    estimator = Estimator() # we need to estimate the epxectation value of the Hamiltonian
     # generates uniform parameters in between [0, 1(
     x0 = rng.uniform(0, 1.0, size=2*reps)
+    
+    # first parameters sets the optimization value of the transpilation, 2 is fine for now
+    pass_manager = generate_preset_pass_manager(2, AerSimulator())
+    isa_circuit = pass_manager.run(ansatz)
     
     def cond_fun(vals):
         curr = vals[0]
@@ -68,7 +75,8 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
         return np.abs(curr - avg_vals)
     
     def objective(params: np.ndarray) -> float:
-        job = estimator.run([(ansatz, cost_op, params)])
+        # job = estimator.run([(ansatz, cost_op, params)])
+        job = estimator.run([(isa_circuit, cost_op, params)])
         result = job.result()[0]
         return float(result.data.evs)
     
@@ -129,7 +137,7 @@ if __name__ == "__main__":
     for graph in files:
         edges, n = load_graph(graph)
         
-        if n < 24:
+        if n < 25:
             start = time.time()
             best_cut, assignment, opt, stats = solve_qaoa(
                 edges=edges,

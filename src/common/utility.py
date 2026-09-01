@@ -2,7 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import os, json
 from typing import Sequence, Union
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import networkx as nx
 
 COLOR_POS = "#d62728"
@@ -121,7 +121,8 @@ def plot_cut(
         for i in range(n)
     ]
 
-    fig, ax = plt.subplots(figsize=figsize)
+    fig = Figure(figsize=figsize)
+    ax = fig.add_subplot()
 
     nx.draw_networkx_nodes(
         G, pos_layout, ax=ax,
@@ -149,10 +150,6 @@ def plot_cut(
     ax.set_axis_off()
     fig.tight_layout()
     fig.savefig(out_path, dpi=dpi, bbox_inches="tight")
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
 
     return out_path
 
