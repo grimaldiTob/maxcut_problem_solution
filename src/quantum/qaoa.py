@@ -10,6 +10,7 @@ from qiskit_aer import AerSimulator
 from qiskit.transpiler import generate_preset_pass_manager
 from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 from qiskit_aer.primitives import EstimatorV2 as Estimator
+from qiskit_aer.primitives import SamplerV2 as Sampler
 
 from src.common.hamiltonian import maxcut_coefficients
 from src.quantum.ansatz import build_ansatz, build_ansatz_manual, initialize_params
@@ -29,7 +30,7 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
                optimizer_method: str,
                reps: int = 1,
                maxiter: int = 100,
-               shots: int = 1024,
+               shots: int = 256,
                manual_ansatz: bool = False):
     """
     Run QAOA for MaxCut on a given graph.
@@ -95,13 +96,14 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
     )
     
     # sampler -> perform measurements = shots
-    sampler = StatevectorSampler()
+    sampler = Sampler()
     qc_measured = ansatz.assign_parameters(optimization.x) # assign the parameters from optimization
     qc_measured.measure_all() # attach measurement operator to all qubits
     
     sample_job = sampler.run([qc_measured], shots=shots) # sample the circuit for `shots` times
     results = sample_job.result()[0]
     counts = results.data.meas.get_counts()
+    
     
     best_cut = -1
     best_x = None
@@ -124,7 +126,7 @@ def solve_qaoa(edges: Iterable[tuple[int, int]],
         
 if __name__ == "__main__":
     files = retrieve_graphs()
-    REPS = 1
+    REPS = 2
     
     results = {
         "n": [],
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     for graph in files:
         edges, n = load_graph(graph)
         
-        if n < 25:
+        if n < 29:
             start = time.time()
             best_cut, assignment, opt, stats = solve_qaoa(
                 edges=edges,
@@ -145,7 +147,7 @@ if __name__ == "__main__":
                 optimizer_method="COBYLA", # for now we stick with this
                 reps=REPS,
                 maxiter=100,
-                shots=256,
+                shots=1024,
                 manual_ansatz=True
             )
             elapsed = time.time() - start
