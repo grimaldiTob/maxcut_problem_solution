@@ -27,7 +27,7 @@ Main objectives of the project were proving the following points:
 - **Goemans-Williamson** is a great stochastic alternative to find solutions close to the optimum with high guarantees. The main goal of the project here is testing these guarantees and verify them.
 - **QAOA (p = 1)** maps a quantum state to a circuit and exploits clever ansatz and parameters optimization to reach solution with almost perfect guarantees.
 
-Actually from the result we got, it looks like as long as n stays contained the `GW` algorithm hields very precise results with much lower execution time (x750 faster than the Quantum optimization).
+Actually from the result we got, it looks like as long as n stays contained the `GW` algorithm hields very precise results with much lower execution time (x750 faster than the Quantum optimization). QAOA looks weak just because we are not actually using quantum hardware to run the simulation. So far I've been using `qiskit-aer` for optimization of states and `COBYLA` for the optimization loop as the `L-BFGS` approach didn't provide consistent results each run.
 
 full numbers in `results/tables/`, cut visualizations in `results/cuts/`.
 

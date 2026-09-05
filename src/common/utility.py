@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import os, json
 from typing import Sequence, Union
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import networkx as nx
 
@@ -23,6 +24,7 @@ GRAPH_DIR = next((p for p in candidates if p.is_dir()),
                           candidates[-1])
 
 RESULTS_DIR = here.parent.parent / "results" / "tables"
+PLOTS_DIR = here.parent.parent / "results" / "plots"
 
 
 def _to_nx_graph(graph: GraphInput) -> nx.Graph:
@@ -104,7 +106,6 @@ def plot_cut(
 
     out_dir = Path(graph_dir) if graph_dir is not None else GRAPH_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
-    print(out_dir)
     if filename is None:
         filename = f"cut_n{n:03d}_v{cut_size}.png"
     out_path = out_dir / filename
@@ -176,6 +177,42 @@ def plot_all_cuts(
         )
     return paths
 
+def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png"):
+    
+    # load the dictionaries from the results file
+    with open(results_dir / "Brute-Force.json") as f: 
+        bf = json.load(f)
+    with open(results_dir / "Goemans-Williamson.json") as f:
+        gw = json.load(f)
+
+    optimum = dict(zip(bf["n"], bf["max_cut"])) # take the exact optimum
+    fig = Figure(figsize=(7, 5));
+    ax = fig.add_subplot()
+
+    def ratio(series, label, style):
+        ns   = [n for n in series["n"] if n in optimum]
+        vals = [c / optimum[n] for n, c in zip(series["n"], series["max_cut"]) if n in optimum]
+        ax.plot(ns, vals, style, label=label)
+
+    ax.axhline(1.0, color="k", lw=0.8, label="Brute force (optimum)")
+    
+    # the bounds are checked and proved for both the algorithms
+    ax.axhline(0.878, color="gray", ls=".-", lw=1, label="GW guarantee (0.878)")
+    ax.axhline(0.6924, color="gray", ls="--", lw=1, label="QAOA p=1 bound, 3-regular")
+
+    ratio(gw, "Goemans–Williamson", "s-")
+    
+    # consider the maxcut problems solved so far
+    for tag in ("p1", "p2"):
+        with open(results_dir / f"QAOA_{tag}.json") as f: 
+            ratio(json.load(f), f"QAOA {tag}", "o--")
+
+    ax.set_xlabel("number of nodes n"); ax.set_ylabel("cut / optimum")
+    ax.set_ylim(0.6, 1.05); ax.legend(loc="lower left")
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(PLOTS_DIR / outfile, dpi=150, bbox_inches="tight")
+    
+    
 def save_results(results: dict, filename: str, OUT_DIR: str = ""):
     file_path = RESULTS_DIR / filename
     
