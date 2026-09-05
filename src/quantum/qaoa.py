@@ -14,7 +14,7 @@ from qiskit_aer.primitives import SamplerV2 as Sampler
 
 from src.common.hamiltonian import maxcut_coefficients
 from src.quantum.ansatz import build_ansatz, build_ansatz_manual, initialize_params
-from src.common.utility import plot_cut, save_results, retrieve_graphs, plot_results
+from src.common.utility import plot_cut, save_results, retrieve_graphs
 from src.common.graphs import load_graph
 from src.common.optimization import Wrapper
 

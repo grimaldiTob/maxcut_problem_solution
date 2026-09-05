@@ -197,7 +197,7 @@ def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png"
     ax.axhline(1.0, color="k", lw=0.8, label="Brute force (optimum)")
     
     # the bounds are checked and proved for both the algorithms
-    ax.axhline(0.878, color="gray", ls=".-", lw=1, label="GW guarantee (0.878)")
+    ax.axhline(0.878, color="gray", ls="-.", lw=1, label="GW guarantee (0.878)")
     ax.axhline(0.6924, color="gray", ls="--", lw=1, label="QAOA p=1 bound, 3-regular")
 
     ratio(gw, "Goemans–Williamson", "s-")
@@ -207,10 +207,12 @@ def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png"
         with open(results_dir / f"QAOA_{tag}.json") as f: 
             ratio(json.load(f), f"QAOA {tag}", "o--")
 
-    ax.set_xlabel("number of nodes n"); ax.set_ylabel("cut / optimum")
+    ax.set_xlabel("# nodes n");
+    ax.set_ylabel("cut / optimum")
     ax.set_ylim(0.6, 1.05); ax.legend(loc="lower left")
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     fig.savefig(PLOTS_DIR / outfile, dpi=150, bbox_inches="tight")
+    plt.close(fig)
     
     
 def save_results(results: dict, filename: str, OUT_DIR: str = ""):
