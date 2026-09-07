@@ -214,6 +214,51 @@ def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png"
     fig.savefig(PLOTS_DIR / outfile, dpi=150, bbox_inches="tight")
     plt.close(fig)
     
+def plot_execution_times(results_dir = RESULTS_DIR, filename: str = "exec_time.png", vis_gw : bool = False):
+    """ if vis_gw is set the function produces another plot which shows the execution time
+        of the goemans-williamson algorithm for each n value.
+    """
+    
+    # open the .json files and retrieve the dict
+    with open(results_dir / "Brute-Force.json") as f:
+        bf = json.load(f)
+        
+    with open(results_dir / "Goemans-Williamson.json") as f:
+        gw = json.load(f)
+        
+    with open(results_dir / "QAOA_p1.json") as f:
+        qaoa_p1 = json.load(f)       
+        
+    with open(results_dir / "QAOA_p2.json") as f:
+        qaoa_p2 = json.load(f)         
+    
+    fig = Figure(figsize=(7, 5));
+    ax = fig.add_subplot()  
+    
+    ax.plot(bf["n"], bf["time"], c="black", marker="o", linestyle="--", label="Brute Force", linewidth=0.7)
+    ax.plot(gw["n"], gw["time"], c="red", marker="o", linestyle="--", label="Goemans-Williamson", linewidth=0.7)
+    ax.plot(qaoa_p1["n"], qaoa_p1["time"], c="green", marker="o", linestyle="--", label="QAOA p=1", linewidth=0.7)
+    ax.plot(qaoa_p2["n"], qaoa_p2["time"], c="blue", marker="o", linestyle="--", label="QAOA p=2", linewidth=0.7)
+    ax.set_xlabel("# nodes")
+    ax.set_ylabel("Execution time (s)")
+    
+    ax.legend()
+    ax.grid(True)
+    fig.savefig(PLOTS_DIR / filename, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    
+    if vis_gw:
+        fig = Figure(figsize=(7, 5));
+        ax = fig.add_subplot()  
+        gw_ms = [x*1000 for x in gw["time"]]
+        
+        ax.plot(gw["n"], gw_ms, c="red", marker="o", linestyle="--", label="Goemans-Williamson", linewidth=0.7)
+        ax.set_xlabel("# nodes")
+        ax.set_ylabel("Execution time G-W (ms)")
+        ax.legend()
+        ax.grid(True)
+        fig.savefig(PLOTS_DIR / "gw_plot.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
     
 def save_results(results: dict, filename: str, OUT_DIR: str = ""):
     file_path = RESULTS_DIR / filename

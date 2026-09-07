@@ -13,7 +13,7 @@ import time
 from src.classic.brute_force import brute_force_maxcut
 from src.classic.goemans_williamson import goemans_williamson
 from src.common.graphs import load_graph
-from src.common.utility import plot_approximation_ratio, retrieve_graphs, save_results
+from src.common.utility import plot_approximation_ratio, retrieve_graphs, save_results, plot_execution_times
 from src.quantum.qaoa import solve_qaoa
 
 N_EXACT_LIMIT = 24 # brute force and QAOA stop at this size
@@ -80,6 +80,7 @@ def main():
         save_results(qaoa_results[reps], filename=f"QAOA_p{reps}.json")
 
     plot_approximation_ratio()
+    plot_execution_times(vis_gw=True)
 
 
 if __name__ == "__main__":
