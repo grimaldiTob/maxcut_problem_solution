@@ -177,59 +177,97 @@ def plot_all_cuts(
         )
     return paths
 
-def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png"):
-    
+def plot_approximation_ratio(results_dir=RESULTS_DIR, outfile="approx_ratio.png", family: str = ""):
+    """
+    Plot cut / optimum per solver for one graph family.
+
+    Reads the result tables of ``results/tables/<family>/`` and saves the
+    figure to ``results/plots/<family>/``. The 0.6924 QAOA p=1 bound only
+    holds for 3-regular graphs, so the line is drawn on that family only;
+    every family gets the m/2 random-cut baseline (ratio m/(2·opt)).
+    """
+    tables_dir = results_dir / family if family else results_dir
+    plots_dir = PLOTS_DIR / family if family else PLOTS_DIR
+    plots_dir.mkdir(parents=True, exist_ok=True)
+
     # load the dictionaries from the results file
-    with open(results_dir / "Brute-Force.json") as f: 
+    with open(tables_dir / "Brute-Force.json") as f:
         bf = json.load(f)
-    with open(results_dir / "Goemans-Williamson.json") as f:
+    with open(tables_dir / "Goemans-Williamson.json") as f:
         gw = json.load(f)
 
     optimum = dict(zip(bf["n"], bf["max_cut"])) # take the exact optimum
+
+    # random-cut baseline: a coin-flip assignment cuts m/2 edges on
+    # average, so its ratio is (m/2) / optimum. m comes from the graph
+    # files themselves (averaged over instances for gnm families).
+    m_sum: dict[int, float] = {}
+    m_count: dict[int, int] = {}
+    for p in retrieve_graphs(family or "3-regular"):
+        payload = json.load(open(p))
+        n = int(payload["n"])
+        m_sum[n] = m_sum.get(n, 0.0) + len(payload["edges"]) / 2
+        m_count[n] = m_count.get(n, 0) + 1
+    m_per_n = {n: m_sum[n] / m_count[n] for n in m_sum}
+
     fig = Figure(figsize=(7, 5));
     ax = fig.add_subplot()
+
+    ax.axhline(1.0, color="k", lw=0.8, label="Brute force (optimum)")
+
+    # the bounds are checked and proved for both the algorithms
+    ax.axhline(0.878, color="gray", ls="-.", lw=1, label="GW guarantee (0.878)")
+    if family == "3-regular":
+        ax.axhline(0.6924, color="gray", ls="--", lw=1, label="QAOA p=1 bound, 3-regular")
 
     def ratio(series, label, style):
         ns   = [n for n in series["n"] if n in optimum]
         vals = [c / optimum[n] for n, c in zip(series["n"], series["max_cut"]) if n in optimum]
         ax.plot(ns, vals, style, label=label)
 
-    ax.axhline(1.0, color="k", lw=0.8, label="Brute force (optimum)")
-    
-    # the bounds are checked and proved for both the algorithms
-    ax.axhline(0.878, color="gray", ls="-.", lw=1, label="GW guarantee (0.878)")
-    ax.axhline(0.6924, color="gray", ls="--", lw=1, label="QAOA p=1 bound, 3-regular")
+    baseline_ns = sorted(n for n in m_per_n if n in optimum)
+    if baseline_ns:
+        ax.plot(baseline_ns, [m_per_n[n] / optimum[n] for n in baseline_ns],
+                ":", color="dimgray", lw=1.2, label="random cut (m/2)")
 
     ratio(gw, "Goemans–Williamson", "s-")
-    
+
     # consider the maxcut problems solved so far
     for tag in ("p1", "p2"):
-        with open(results_dir / f"QAOA_{tag}.json") as f: 
-            ratio(json.load(f), f"QAOA {tag}", "o--")
+        qaoa_file = tables_dir / f"QAOA_{tag}.json"
+        if qaoa_file.is_file():  # ER families only have p=1
+            ratio(json.load(open(qaoa_file)), f"QAOA {tag}", "o--")
 
     ax.set_xlabel("# nodes n");
     ax.set_ylabel("cut / optimum")
     ax.set_ylim(0.6, 1.05); ax.legend(loc="lower left")
-    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(PLOTS_DIR / outfile, dpi=150, bbox_inches="tight")
+    fig.savefig(plots_dir / outfile, dpi=150, bbox_inches="tight")
     plt.close(fig)
     
-def plot_execution_times(results_dir = RESULTS_DIR, filename: str = "exec_time.png", vis_gw : bool = False):
-    """ if vis_gw is set the function produces another plot which shows the execution time
-        of the goemans-williamson algorithm for each n value.
+def plot_execution_times(results_dir = RESULTS_DIR, filename: str = "exec_time.png", vis_gw : bool = False, family: str = ""):
     """
-    
+    Plot the per-solver execution times of one graph family.
+
+    Reads the result tables of ``results/tables/<family>/`` and saves the
+    figure to ``results/plots/<family>/``. If vis_gw is set the function
+    also produces a separate plot showing the Goemans-Williamson time per n.
+    """
+    tables_dir = results_dir / family if family else results_dir
+    plots_dir = PLOTS_DIR / family if family else PLOTS_DIR
+    plots_dir.mkdir(parents=True, exist_ok=True)
+
     # open the .json files and retrieve the dict
-    with open(results_dir / "Brute-Force.json") as f:
+    with open(tables_dir / "Brute-Force.json") as f:
         bf = json.load(f)
         
-    with open(results_dir / "Goemans-Williamson.json") as f:
+    with open(tables_dir / "Goemans-Williamson.json") as f:
         gw = json.load(f)
         
-    with open(results_dir / "QAOA_p1.json") as f:
+    with open(tables_dir / "QAOA_p1.json") as f:
         qaoa_p1 = json.load(f)       
+
         
-    with open(results_dir / "QAOA_p2.json") as f:
+    with open(tables_dir / "QAOA_p2.json") as f:
         qaoa_p2 = json.load(f)         
     
     fig = Figure(figsize=(7, 5));
@@ -244,7 +282,7 @@ def plot_execution_times(results_dir = RESULTS_DIR, filename: str = "exec_time.p
     
     ax.legend()
     ax.grid(True)
-    fig.savefig(PLOTS_DIR / filename, dpi=150, bbox_inches="tight")
+    fig.savefig(plots_dir / filename, dpi=150, bbox_inches="tight")
     plt.close(fig)
     
     if vis_gw:
@@ -257,24 +295,43 @@ def plot_execution_times(results_dir = RESULTS_DIR, filename: str = "exec_time.p
         ax.set_ylabel("Execution time G-W (ms)")
         ax.legend()
         ax.grid(True)
-        fig.savefig(PLOTS_DIR / "gw_plot.png", dpi=150, bbox_inches="tight")
+        fig.savefig(plots_dir / "gw_plot.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
     
-def save_results(results: dict, filename: str, OUT_DIR: str = ""):
-    file_path = RESULTS_DIR / filename
-    
+def save_results(results: dict, filename: str, family: str = ""):
+    """
+    Save a results dict as JSON.
+
+    With `family` set, results land in ``results/tables/<family>/`` so that
+    different graph families never overwrite each other's tables; the empty
+    default keeps the historical flat layout.
+    """
+    out_dir = RESULTS_DIR / family if family else RESULTS_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    file_path = out_dir / filename
+
     with open(file_path, "w") as file:
         json.dump(results, file)
-        file.close()    
-        
-def retrieve_graphs():
+        file.close()
+
+def retrieve_graphs(family: str = "3-regular"):
+    """
+    Obtain a list with the filenames of the graphs .json files of one
+    graph family, stored in data/graphs/<family>/.
+    """
     here = Path(__file__).resolve().parent
     candidates = [
-        Path.cwd() / "data" / "graphs",            
+        Path.cwd() / "data" / "graphs",
         here.parent.parent / "data" / "graphs",
     ]
-    
+
     graphs_dir = next((p for p in candidates if p.is_dir()),
                             candidates[-1])
-        
-    return sorted(p for p in graphs_dir.glob("graph_n*.json"))
+
+    family_dir = graphs_dir / family
+    if not family_dir.is_dir():
+        raise FileNotFoundError(
+            f"{family_dir} (expected e.g. '3-regular' or 'gnm_d3')"
+        )
+
+    return sorted(p for p in family_dir.glob("graph_n*.json"))
