@@ -1,9 +1,7 @@
 """
 3-regular graph generators for MaxCut/QAOA studies.
 
-Persists each graph to ``data/graphs/graph_n***.json`` as an
-edge-list with metadata, so the dataset is human-readable, diffable in
-git, and framework-agnostic (NetworkX, rustworkx, Qiskit, etc.).
+Persists each graph to ``data/graphs/graph_n***.json``
 
 Each file looks like:
     {
@@ -13,11 +11,7 @@ Each file looks like:
       "edges": [[0, 1], [0, 3], ...],
       "schema": "maxcut-qaoa/edge-list-v1"
     }
-
-A combined ``data/graphs/manifest.json`` is also written so consumers
-can enumerate the dataset without scanning the directory.
 """
-
 from __future__ import annotations
 
 import json
@@ -37,16 +31,14 @@ SCHEMA = "maxcut-qaoa/edge-list-v1"
 
 GraphLike = Union[nx.Graph, str, Path]
 
-
 def make_cubic(n: int, seed: int) -> nx.Graph:
     """
-    Create a 3-regular (cubic) graph with ``n`` nodes.
+    Create a 3-regular (cubic) graph with `n` nodes.
 
     Parameters
-    ----------
     n : int
         Number of nodes. Must be even and > 6 for a 3-regular graph
-        to exist (Handshake lemma + simple graph constraint).
+        to exist.
     seed : int
         RNG seed for reproducibility.
     """
@@ -58,7 +50,7 @@ def make_cubic(n: int, seed: int) -> nx.Graph:
 
 
 def graph_to_payload(graph: nx.Graph, n: int, seed: int) -> dict:
-    """Serialise a NetworkX graph to our edge-list JSON schema."""
+    """Serialise a graph to our edge-list JSON schema which is basically a python dict."""
     edges = [
         sorted([int(u), int(v)])
         for u, v in graph.edges()
@@ -82,24 +74,21 @@ def payload_to_graph(payload: dict) -> nx.Graph:
     g.add_edges_from(payload["edges"])
     return g
 
-
-def graph_filename(n: int) -> str:
-    return f"graph_n{n:03d}.json"
-
-
-def generate_all(sizes: Iterable[int] = SIZES, out_dir: Path = DATA_DIR) -> dict[int, Path]:
+def generate_all(sizes: Iterable[int] = SIZES, out_dir: Path = DATA_DIR, graph_family: str = "3-regular") -> dict[int, Path]:
     """
     Generate one 3-regular graph per size in ``sizes`` and persist each
     to ``out_dir`` as JSON. Returns a mapping ``{n: filepath}``.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     written: dict[int, Path] = {}
+    
+    out_dir = out_dir / graph_family
     for n in sizes:
         # Per-size seed = 100 + n, matching the original script.
         seed = 100 + n
         graph = make_cubic(n, seed=seed)
         payload = graph_to_payload(graph, n=n, seed=seed)
-        path = out_dir / graph_filename(n)
+        path = out_dir / f"graph_n{n:03d}.json"
         path.write_text(json.dumps(payload, indent=2) + "\n")
         written[n] = path
     return written
@@ -110,10 +99,10 @@ def write_manifest(sizes: Iterable[int] = SIZES, out_dir: Path = DATA_DIR) -> Pa
     sizes = list(sizes)
     manifest = {
         "schema": SCHEMA,
-        "graph_family": "3-regular",
+        "graph_family": "3-regular", # crucial to determine the kind of graph to be determined
         "count": len(sizes),
         "sizes": sizes,
-        "files": [graph_filename(n) for n in sizes],
+        "files": [f"graph_n{n:03d}.json" for n in sizes],
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / MANIFEST_NAME

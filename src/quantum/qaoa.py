@@ -170,4 +170,3 @@ if __name__ == "__main__":
             results["energy_opt"].append(opt)
         
     save_results(results, filename=f"QAOA_p{REPS}.json")
-    plot_results(results, filename="QAOA")
